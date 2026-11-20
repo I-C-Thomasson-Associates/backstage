@@ -1,0 +1,69 @@
+# ICTA fork: builds the monorepo backend (packages/backend + packages/app) into a GHCR image.
+# Lives only on the `icta` branch so `master` can keep tracking upstream cleanly.
+name: ICTA build image
+on:
+  push:
+    branches: [icta]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/i-c-thomasson-associates/backstage
+
+jobs:
+  build:
+    if: github.repository == 'I-C-Thomasson-Associates/backstage'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Same Node major as packages/backend/Dockerfile (native modules must match).
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+
+      - name: yarn install
+        uses: backstage/actions/yarn-install@v0.7.13
+        with:
+          cache-prefix: ${{ runner.os }}-v24
+
+      # Same steps as the root `docker-build` script.
+      - run: yarn tsc
+      - run: yarn build:backend
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build and push
+        id: push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: packages/backend/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:sha-${{ github.sha }}
+            ${{ env.IMAGE }}:icta
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Digest for backstage_image
+        run: echo "\`${IMAGE}@${{ steps.push.outputs.digest }}\`" >> "$GITHUB_STEP_SUMMARY"
