@@ -41,6 +41,10 @@ jobs:
 
       # Same steps as the root `docker-build` script.
       - run: yarn tsc
+      - name: Test ICTA sign-in org check
+        run: yarn workspace example-backend test src/githubOrgMembership
+        env:
+          CI: true
       - run: yarn build:backend
 
       - uses: docker/login-action@v4
