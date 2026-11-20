@@ -34,20 +34,24 @@ jobs:
 
       - run: corepack enable
 
+      # Yarn merges every parent .yarnrc.yml; the monorepo root's has settings icta-app's Yarn rejects.
+      - name: Copy icta-app out of the monorepo
+        run: cp -r icta-app "$RUNNER_TEMP/icta-app"
+
       - name: yarn install
-        working-directory: icta-app
+        working-directory: ${{ runner.temp }}/icta-app
         run: yarn install --immutable
 
-      - working-directory: icta-app
+      - working-directory: ${{ runner.temp }}/icta-app
         run: yarn tsc
 
       - name: Test ICTA sign-in org check
-        working-directory: icta-app
+        working-directory: ${{ runner.temp }}/icta-app
         run: yarn workspace backend test src/githubOrgMembership
         env:
           CI: true
 
-      - working-directory: icta-app
+      - working-directory: ${{ runner.temp }}/icta-app
         run: yarn build:backend
 
       - uses: docker/login-action@v4
@@ -62,8 +66,8 @@ jobs:
         id: push
         uses: docker/build-push-action@v7
         with:
-          context: icta-app
-          file: icta-app/packages/backend/Dockerfile
+          context: ${{ runner.temp }}/icta-app
+          file: ${{ runner.temp }}/icta-app/packages/backend/Dockerfile
           platforms: linux/amd64
           push: true
           tags: |
