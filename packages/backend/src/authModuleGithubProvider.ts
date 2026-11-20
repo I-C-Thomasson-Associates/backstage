@@ -46,6 +46,9 @@ export default createBackendModule({
           'https://api.github.com';
         const allowedOrgs =
           config.getOptionalStringArray('icta.githubSignIn.allowedOrgs') ?? [];
+        // Explicit opt-out for hosts where every account is an employee (GHE.com managed users).
+        const allowAnyUser =
+          config.getOptionalBoolean('icta.githubSignIn.allowAnyUser') ?? false;
         providers.registerProvider({
           providerId: 'github',
           factory: createOAuthProviderFactory({
@@ -58,11 +61,13 @@ export default createBackendModule({
                 );
               }
 
-              const org = await findAllowedOrg({
-                apiUrl,
-                accessToken: session.accessToken,
-                allowedOrgs,
-              });
+              const org =
+                allowAnyUser ||
+                (await findAllowedOrg({
+                  apiUrl,
+                  accessToken: session.accessToken,
+                  allowedOrgs,
+                }));
               if (!org) {
                 logger.warn(`Rejected GitHub sign-in for ${userId}`);
                 throw new Error(
