@@ -17,11 +17,13 @@
 import ReactDOM from 'react-dom/client';
 import { createApp } from '@backstage/frontend-defaults';
 import { appModulePublicSignIn } from '@backstage/plugin-app/alpha';
+import { appModuleSignIn } from './modules/appModuleSignIn';
 
 import '@backstage/ui/css/styles.css';
 
 const app = createApp({
-  features: [appModulePublicSignIn],
+  // ICTA: signed-out users see this app first, so it needs the GitHub sign-in page too.
+  features: [appModulePublicSignIn, appModuleSignIn],
 });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(app.createRoot());
