@@ -70,5 +70,7 @@ backend.add(import('@backstage/plugin-mcp-actions-backend'));
 
 
 backend.add(import('./inventoryRelations'));
+// ICTA: discovers catalog-info.yaml in GitHub orgs (catalog.providers.github in config)
+backend.add(import('@backstage/plugin-catalog-backend-module-github'));
 
 backend.start();
