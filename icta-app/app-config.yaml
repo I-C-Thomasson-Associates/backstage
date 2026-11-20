@@ -6,17 +6,53 @@ app:
   baseUrl: http://localhost:7007
   packages: all
   extensions:
-    - page:catalog:
+    # Backstage's standard home page at /, catalog at its default /catalog.
+    # Same widgets as the create-app scaffold, minus Random Joke (it calls an external API).
+    - home-page-widget:home/random-joke: false
+    - home-page-widget:home/toolkit:
+        config:
+          tools:
+            - url: https://backstage.io/docs
+              label: Docs
+              icon: docs
+            - url: https://backstage.io/plugins
+              label: Plugins Directory
+              icon: kind:component
+    - page:home:
         config:
           path: /
-    # The home page uses the custom layout in packages/app/src/modules/home; these widgets
-    # call external services or aren't used.
-    - home-page-widget:home/random-joke: false
-    - home-page-widget:home/toolkit: false
-    - home-page-widget:home/world-clock: false
-    - home-page-widget:home/most-visited: false
-    - home-page-widget:home/recently-visited: false
-    - home-page-widget:home/starred-entities: false
+          defaultConfig:
+            - component: HomePageSearchBar
+              column: 0
+              row: 0
+              width: 12
+              height: 2
+              deletable: false
+            - component: GettingStarted
+              column: 0
+              row: 1
+              width: 4
+              height: 11
+            - component: HomePageStarredEntities
+              column: 4
+              row: 2
+              width: 4
+              height: 4
+            - component: HomePageToolkit
+              column: 8
+              row: 2
+              width: 4
+              height: 4
+            - component: HomePageMostVisited
+              column: 4
+              row: 6
+              width: 4
+              height: 4
+            - component: HomePageRecentlyVisited
+              column: 8
+              row: 6
+              width: 4
+              height: 4
 
 organization:
   name: Salas O'Brien
