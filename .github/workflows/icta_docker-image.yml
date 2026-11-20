@@ -1,4 +1,4 @@
-# ICTA fork: builds the monorepo backend (packages/backend + packages/app) into a GHCR image.
+# ICTA fork: builds our Backstage app (icta-app/, a create-app app using Backstage from npm) into a GHCR image.
 # Lives only on the `icta` branch so `master` can keep tracking upstream cleanly.
 name: ICTA build image
 on:
@@ -22,30 +22,33 @@ jobs:
     if: github.repository == 'I-C-Thomasson-Associates/backstage'
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    env:
-      NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
-      # Same Node major as packages/backend/Dockerfile (native modules must match).
+      # Same Node major as icta-app/packages/backend/Dockerfile (native modules must match).
       - uses: actions/setup-node@v7
         with:
           node-version: 24.x
 
-      - name: yarn install
-        uses: backstage/actions/yarn-install@v0.7.13
-        with:
-          cache-prefix: ${{ runner.os }}-v24
+      - run: corepack enable
 
-      # Same steps as the root `docker-build` script.
-      - run: yarn tsc
+      - name: yarn install
+        working-directory: icta-app
+        run: yarn install --immutable
+
+      - working-directory: icta-app
+        run: yarn tsc
+
       - name: Test ICTA sign-in org check
-        run: yarn workspace example-backend test src/githubOrgMembership
+        working-directory: icta-app
+        run: yarn workspace backend test src/githubOrgMembership
         env:
           CI: true
-      - run: yarn build:backend
+
+      - working-directory: icta-app
+        run: yarn build:backend
 
       - uses: docker/login-action@v4
         with:
@@ -59,8 +62,8 @@ jobs:
         id: push
         uses: docker/build-push-action@v7
         with:
-          context: .
-          file: packages/backend/Dockerfile
+          context: icta-app
+          file: icta-app/packages/backend/Dockerfile
           platforms: linux/amd64
           push: true
           tags: |

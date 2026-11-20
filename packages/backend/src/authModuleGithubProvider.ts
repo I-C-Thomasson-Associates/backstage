@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  coreServices,
-  createBackendModule,
-} from '@backstage/backend-plugin-api';
+import { createBackendModule } from '@backstage/backend-plugin-api';
 import {
   DEFAULT_NAMESPACE,
   stringifyEntityRef,
@@ -27,51 +24,23 @@ import {
   authProvidersExtensionPoint,
   createOAuthProviderFactory,
 } from '@backstage/plugin-auth-node';
-import { findAllowedOrg } from './githubOrgMembership';
 
 export default createBackendModule({
   pluginId: 'auth',
   moduleId: 'githubProvider',
   register(reg) {
     reg.registerInit({
-      deps: {
-        providers: authProvidersExtensionPoint,
-        config: coreServices.rootConfig,
-        logger: coreServices.logger,
-      },
-      async init({ providers, config, logger }) {
-        // ICTA: only members of these orgs may sign in (see githubOrgMembership.ts).
-        const apiUrl =
-          config.getOptionalString('icta.githubSignIn.apiUrl') ??
-          'https://api.github.com';
-        const allowedOrgs =
-          config.getOptionalStringArray('icta.githubSignIn.allowedOrgs') ?? [];
-        // Explicit opt-out for hosts where every account is an employee (GHE.com managed users).
-        const allowAnyUser =
-          config.getOptionalBoolean('icta.githubSignIn.allowAnyUser') ?? false;
+      deps: { providers: authProvidersExtensionPoint },
+      async init({ providers }) {
         providers.registerProvider({
           providerId: 'github',
           factory: createOAuthProviderFactory({
             authenticator: githubAuthenticator,
-            async signInResolver({ result: { fullProfile, session } }, ctx) {
+            async signInResolver({ result: { fullProfile } }, ctx) {
               const userId = fullProfile.username;
               if (!userId) {
                 throw new Error(
                   `GitHub user profile does not contain a username`,
-                );
-              }
-
-              const org =
-                allowAnyUser ||
-                (await findAllowedOrg({
-                  apiUrl,
-                  accessToken: session.accessToken,
-                  allowedOrgs,
-                }));
-              if (!org) {
-                logger.warn(`Rejected GitHub sign-in for ${userId}`);
-                throw new Error(
-                  'Sign-in requires membership in an allowed GitHub organization',
                 );
               }
 

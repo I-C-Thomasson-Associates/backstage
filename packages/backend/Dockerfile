@@ -35,8 +35,6 @@ RUN pip3 install mkdocs-techdocs-core==1.1.7
 WORKDIR /app
 RUN chown node:node /app
 USER node
-# ICTA: pre-create as node, else BuildKit makes the cache mount's parent root-owned (EACCES in yarn).
-RUN mkdir -p /home/node/.yarn/berry/cache
 
 
 # This switches many Node.js dependencies to production mode.

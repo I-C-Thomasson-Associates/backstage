@@ -1,0 +1,65 @@
+# ICTA base config, baked into the image. Deployment-specific settings (URLs, database,
+# GitHub sign-in, service token) come from the infra repo's ConfigMap, loaded after this file.
+# No guest sign-in and no local example data on purpose.
+app:
+  title: Backstage
+  baseUrl: http://localhost:7007
+  packages: all
+  extensions:
+    - page:catalog:
+        config:
+          path: /
+    # The home page uses the custom layout in packages/app/src/modules/home; these widgets
+    # call external services or aren't used.
+    - home-page-widget:home/random-joke: false
+    - home-page-widget:home/toolkit: false
+    - home-page-widget:home/world-clock: false
+    - home-page-widget:home/most-visited: false
+    - home-page-widget:home/recently-visited: false
+    - home-page-widget:home/starred-entities: false
+
+organization:
+  name: Salas O'Brien
+
+backend:
+  baseUrl: http://localhost:7007
+  listen:
+    port: 7007
+  csp:
+    connect-src: ["'self'", 'http:', 'https:']
+  database:
+    client: better-sqlite3
+    connection: ':memory:'
+  actions:
+    pluginSources:
+      - auth
+      - catalog
+      - scaffolder
+
+techdocs:
+  builder: 'local'
+  generator:
+    runIn: 'local'
+  publisher:
+    type: 'local'
+
+auth:
+  providers: {}
+  clientIdMetadataDocuments:
+    enabled: false
+
+catalog:
+  import:
+    entityFilename: catalog-info.yaml
+    pullRequestBranchName: backstage-integration
+  rules:
+    - allow: [Component, System, API, Resource, Location, Domain, Group, User]
+  locations: []
+
+kubernetes:
+
+permission:
+  enabled: true
+
+mcpActions:
+  name: 'Salas O''Brien Backstage'
